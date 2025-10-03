@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test WebSocket Orders</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    #orders { margin-top: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    #revenue { font-size: 20px; color: green; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>📦 Suivi des commandes en temps réel</h1>
+
+  <div id="revenue">Revenu total: 0 DA</div>
+
+  <div id="orders">
+    <h2>Commandes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Prénom</th>
+          <th>Téléphone</th>
+          <th>Prix</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const socket = io("http://localhost:3000", { transports: ["websocket"] });
+
+    const ordersBody = document.getElementById("ordersBody");
+    const revenueDiv = document.getElementById("revenue");
+
+    socket.on("connect", () => {
+      console.log("✅ Connecté au WebSocket:", socket.id);
+    });
+
+ socket.on("initData", (data) => {
+      console.log("📦 Données initiales:", data);
+      ordersBody.innerHTML = "";
+      data.FakeOrders.forEach(addOrderRow);
+      revenueDiv.textContent = "Revenu total: " + data.revenue + " DA";
+    });
+
+    // nouvelle commande en direct
+    socket.on("FakeOrderAdded", (order) => {
+      console.log("🆕 Nouvelle commande:", order);
+      addOrderRow(order);
+    });
+
+    // mise à jour des stats (revenus)
+    socket.on("stats", (stats) => {
+      console.log("📊 Mise à jour stats:", stats);
+      revenueDiv.textContent = "Revenu total: " + stats.revenue + " DA";
+    });
+
+    // fonction pour ajouter une ligne au tableau
+    function addOrderRow(order) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${order.nom}</td>
+        <td>${order.prenom}</td>
+        <td>${order.phone}</td>
+        <td>${order.price} DA</td>
+        <td>${order.status}</td>
+      `;
+      ordersBody.appendChild(tr);
+    }
+  </script>
+</body>
+</html>
